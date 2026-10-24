@@ -13,6 +13,34 @@ class CompileRequest(BaseModel):
     language: str
     source_code: str
 
+# 데이터베이스 및 테이블 초기화 함수 추가
+def init_db():
+    try:
+        connection = pymysql.connect(
+            host='build_mariadb',
+            user='admin',
+            password='1234',
+            database='build_system',
+            charset='utf8mb4'
+        )
+        with connection.cursor() as cursor:
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS code_submissions (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    language VARCHAR(50),
+                    source_code TEXT,
+                    build_output TEXT,
+                    status VARCHAR(50),
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+            connection.commit()
+        connection.close()
+    except Exception as e:
+        print(f"DB init failed: {e}")
+
+init_db()
+
 @app.post("/compile")
 def compile_code(req: CompileRequest):
     language = req.language
