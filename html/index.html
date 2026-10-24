@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>모바일 웹 빌드 시스템</title>
+    <title>웹 빌드 시스템</title>
     <style>
         body { font-family: sans-serif; margin: 15px; background: #f8f9fa; color: #333; }
         .container { max-width: 600px; margin: 0 auto; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
@@ -15,17 +15,17 @@
 </head>
 <body>
     <div class="container">
-        <h2>🚀 모바일 컴파일 웹 빌드 시스템</h2>
+        <h2>웹 빌드 시스템</h2>
         <label for="language">컴파일 언어 선택:</label>
         <select id="language">
-            <option value="python">Python 3.11</option>
-            <option value="cpp">C++ (GCC)</option>
-            <option value="java">Java (OpenJDK 17)</option>
+            <option value="python">Python</option>
+            <option value="cpp">C/C++</option>
+            <option value="java">Java</option>
         </select>
         <label for="source_code">소스 코드 입력:</label>
         <textarea id="source_code" placeholder="코드를 입력하세요..."></textarea>
         <button type="button" id="submitBtn" onclick="submitCode()">빌드 및 실행</button>
-        <h3>📌 실행 결과</h3>
+        <h3>실행 결과</h3>
         <pre id="resultOutput">대기 중...</pre>
     </div>
     <script>
