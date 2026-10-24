@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>모바일 웹 빌드 시스템</title>
+    <style>
+        body { font-family: sans-serif; margin: 15px; background: #f8f9fa; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        select, textarea, button { width: 100%; margin-top: 8px; padding: 12px; font-size: 16px; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box; }
+        textarea { height: 180px; font-family: monospace; background: #fdfdfd; }
+        button { background: #0066cc; color: #fff; font-weight: bold; border: none; cursor: pointer; margin-top: 15px; }
+        pre { background: #1e1e1e; color: #00ff00; padding: 12px; border-radius: 5px; overflow-x: auto; min-height: 80px; font-family: monospace; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>🚀 모바일 컴파일 웹 빌드 시스템</h2>
+        <label for="language">컴파일 언어 선택:</label>
+        <select id="language">
+            <option value="python">Python 3.11</option>
+            <option value="cpp">C++ (GCC)</option>
+            <option value="java">Java (OpenJDK 17)</option>
+        </select>
+        <label for="source_code">소스 코드 입력:</label>
+        <textarea id="source_code" placeholder="코드를 입력하세요..."></textarea>
+        <button type="button" id="submitBtn" onclick="submitCode()">빌드 및 실행</button>
+        <h3>📌 실행 결과</h3>
+        <pre id="resultOutput">대기 중...</pre>
+    </div>
+    <script>
+        function submitCode() {
+            const lang = document.getElementById('language').value;
+            const code = document.getElementById('source_code').value;
+            const outputArea = document.getElementById('resultOutput');
+            const submitBtn = document.getElementById('submitBtn');
+            if (!code.trim()) { alert('코드를 입력하세요.'); return; }
+            outputArea.textContent = "공유 볼륨 마운트 생성 및 격리 컨테이너 빌드 중...";
+            submitBtn.disabled = true;
+            fetch('/compile', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ language: lang, source_code: code })
+            })
+            .then(res => res.json())
+            .then(data => {
+                outputArea.textContent = `[상태: ${data.status} (DB 저장: ${data.db_saved ? '성공' : '실패'})]\n\n${data.output}`;
+                submitBtn.disabled = false;
+            })
+            .catch(err => {
+                outputArea.textContent = "통신 오류: " + err;
+                submitBtn.disabled = false;
+            });
+        }
+    </script>
+</body>
+</html>

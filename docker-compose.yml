@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+  nginx:
+    image: nginx:latest
+    container_name: build_nginx
+    restart: always
+    ports:
+      - "80:80"
+    volumes:
+      - ./html:/var/www/html
+      - ./nginx/conf.d:/etc/nginx/conf.d
+    networks:
+      - build-network
+
+  app-backend:
+    build:
+      context: .
+      dockerfile: python/Dockerfile
+    container_name: build_backend
+    restart: always
+    working_dir: /var/www/html
+    environment:
+      - HOST_WORKSPACE_BASE=/opt/web_build_system/html/workspace
+    volumes:
+      - ./html:/var/www/html
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+    networks:
+      - build-network
+
+  mariadb:
+    image: mariadb:11.2
+    container_name: build_mariadb
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: secure_password
+      MYSQL_DATABASE: build_system
+    ports:
+      - "3307:3306"
+    volumes:
+      - mariadb_data:/var/lib/mysql
+    networks:
+      - build-network
+
+volumes:
+  mariadb_data:
+
+networks:
+  build-network:
+    driver: bridge
