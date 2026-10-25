@@ -13,34 +13,6 @@ class CompileRequest(BaseModel):
     language: str
     source_code: str
 
-# 데이터베이스 및 테이블 초기화 함수 추가
-def init_db():
-    try:
-        connection = pymysql.connect(
-            host='build_mariadb',
-            user='admin',
-            password='1234',
-            database='build_system',
-            charset='utf8mb4'
-        )
-        with connection.cursor() as cursor:
-            cursor.execute("""
-                CREATE TABLE IF NOT EXISTS code_submissions (
-                    id INT AUTO_INCREMENT PRIMARY KEY,
-                    language VARCHAR(50),
-                    source_code TEXT,
-                    build_output TEXT,
-                    status VARCHAR(50),
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                )
-            """)
-            connection.commit()
-        connection.close()
-    except Exception as e:
-        print(f"DB init failed: {e}")
-
-init_db()
-
 @app.post("/compile")
 def compile_code(req: CompileRequest):
     language = req.language
@@ -49,16 +21,15 @@ def compile_code(req: CompileRequest):
     if not language or not source_code:
         return {"status": "ERROR", "output": "Invalid input data."}
 
-    # 1. 컨테이너 내부 작업 디렉터리 생성 (파일 생성용)
+    # 1. 고유 작업 디렉터리 생성
     task_id = "task_" + uuid.uuid4().hex[:12]
     container_workspace_dir = os.path.abspath(f"./workspace/{task_id}")
     os.makedirs(container_workspace_dir, exist_ok=True)
 
-    # 2. 호스트 기준의 절대 경로 설정 (Docker 데몬 볼륨 마운트용)
     host_base_dir = os.getenv("HOST_WORKSPACE_BASE", "/opt/web_build_system/html/workspace")
     host_workspace_dir = f"{host_base_dir}/{task_id}"
 
-    # 3. 언어별 소스 파일 생성 및 호스트 경로 기반 도커 명령어 설정
+    # 2. 선택된 언어에 따른 올바른 파일명 및 Docker 실행 명령어 설정
     container_cmd = []
     if language == 'python':
         with open(os.path.join(container_workspace_dir, "main.py"), "w", encoding="utf-8") as f:
@@ -74,9 +45,9 @@ def compile_code(req: CompileRequest):
         container_cmd = ["docker", "run", "--rm", "--network", "none", "-m", "256m", "-v", f"{host_workspace_dir}:/app:z", "openjdk:17-slim", "bash", "-c", "javac /app/Main.java && java -cp /app Main"]
     else:
         shutil.rmtree(container_workspace_dir, ignore_errors=True)
-        return {"status": "ERROR", "output": "Unsupported language."}
+        return {"status": "ERROR", "output": "Unsupported language selected."}
 
-    # 4. 프로세스 실행 및 5초 타임아웃 제어
+    # 3. 프로세스 실행 및 5초 타임아웃 제어
     output = ""
     status = "SUCCESS"
     try:
@@ -91,7 +62,7 @@ def compile_code(req: CompileRequest):
         output = f"Process execution failed: {str(e)}"
         status = "ERROR"
 
-    # 5. 연산 완료 후 MariaDB 적재
+    # 4. 연산 완료 후 MariaDB 적재
     db_saved = False
     try:
         connection = pymysql.connect(
@@ -110,7 +81,7 @@ def compile_code(req: CompileRequest):
     except Exception:
         pass
 
-    # 6. 임시 작업 디렉터리 정리 (Clean-up) 및 컨테이너 자동 소멸 (--rm)
+    # 5. 임시 작업 디렉터리 정리
     shutil.rmtree(container_workspace_dir, ignore_errors=True)
 
     return {
